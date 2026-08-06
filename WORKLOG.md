@@ -183,38 +183,50 @@ pasos:
 
 ## 7. Bloqueos y cómo se resolvieron
 
-- **No hubo acceso de escritura directa a Git (`git push`) en este
-  entorno.** `git push` a `agent/application-foundation` devolvió `403`
-  tanto desde el checkout de trabajo como desde un clon nuevo hecho
-  específicamente para tener credenciales inyectadas (`/workspace/...`,
-  siguiendo las instrucciones de la herramienta `add_repo`); el propio
-  estado del proxy de red confirmó que el `403` viene de GitHub (no del
-  proxy: el `CONNECT` a `github.com` se resuelve sin problemas, tal como
-  lo prueban el `clone`/`fetch`, que sí funcionan). Es coherente con que
-  este entorno da acceso de lectura a Git pero reserva la escritura a las
-  herramientas MCP de GitHub. Se resolvió publicando los 6 commits con
-  `mcp__github__push_files` (uno por commit, mismo mensaje y mismo
-  agrupamiento de archivos que localmente), preservando el historial
-  granular. **Excepción: `package-lock.json` (365 KB, ~10.300 líneas) no
-  se pudo commitear** — `push_files` requiere el contenido completo del
+- **BLOQUEO SIN RESOLVER: no fue posible publicar los commits en GitHub
+  desde este entorno.** Se probaron los dos caminos disponibles y ambos
+  fallaron:
+  1. `git push` a `agent/application-foundation` devolvió `403` tanto
+     desde el checkout de trabajo original como desde un clon nuevo hecho
+     específicamente para tener credenciales inyectadas
+     (`/workspace/plataforma-pci`, siguiendo las instrucciones de la
+     herramienta `add_repo`). El estado del proxy de red confirmó que el
+     `403` viene de GitHub, no del proxy (el `CONNECT` a `github.com` se
+     resuelve sin problemas: `clone`/`fetch` funcionan bien en ambos
+     lugares).
+  2. `mcp__github__push_files` (la vía documentada para escribir en
+     GitHub desde este entorno) devolvió:
+     `failed to create tree: POST .../git/trees: 403 Resource not
+     accessible by integration`. Esto indica que la integración/GitHub
+     App de esta sesión no tiene permiso de escritura (`contents:
+     write`) sobre este repositorio — es una restricción de
+     autorización, no un problema técnico que se pueda resolver
+     reintentando o cambiando de herramienta.
+
+  Siguiendo la instrucción explícita para este caso ("no reintentar el
+  mismo repo; comunicar el motivo exacto al usuario"), **se detuvo el
+  intento de publicación**. Todo el trabajo del hito está completo,
+  validado localmente (ver secciones 1–6) y commiteado en 7 commits
+  locales sobre `agent/application-foundation` (los 6 originales más un
+  ajuste de `npm ci` → `npm install`, ver más abajo), pero **no llegó al
+  repositorio remoto**. Se necesita que alguien con acceso otorgue
+  permiso de escritura sobre `sebastiangiampani-create/Plataforma-PCI` a
+  la integración de GitHub de esta sesión (o publique estos commits por
+  otra vía) para completar la apertura del Pull Request.
+
+- **`package-lock.json` (365 KB, ~10.300 líneas) tampoco se hubiera
+  podido commitear vía `push_files`** aunque el permiso anterior hubiera
+  estado disponible: esa herramienta requiere el contenido completo del
   archivo como parámetro literal, y las herramientas de esta sesión
   truncan salidas de más de ~300 KB, por lo que no había forma confiable
   de trasladar el archivo generado byte a byte sin riesgo real de
-  corromperlo (y un lockfile corrupto rompe silenciosamente `npm ci` en
-  CI de una forma difícil de diagnosticar para quien revise el PR). Se
-  decidió no arriesgar esa corrupción: `package.json` de cada workspace
-  sí se commiteó (son pequeños y se revisaron a mano), pero
-  `package-lock.json` queda pendiente. Mientras tanto, CI y las
-  instrucciones de desarrollo local usan `npm install` en lugar de
-  `npm ci` (ver nota en `.github/workflows/ci.yml` y `README.md`).
-  **Acción pendiente para quien tenga acceso de push normal:** correr
-  `npm install` una vez, commitear el `package-lock.json` resultante, y
-  volver a cambiar `npm ci` en `.github/workflows/ci.yml`
-  (`cache: 'npm'` en el paso de `actions/setup-node` también se puede
-  restaurar en ese momento). Localmente, en este mismo hito, `npm ci` sí
-  se corrió con éxito contra el lockfile completo (ver sección 6), así
-  que el lockfile generado es válido — es exclusivamente la subida a
-  GitHub la que quedó pendiente.
+  corromperlo. Por las dudas, se ajustó CI y las instrucciones de
+  desarrollo local para usar `npm install` en lugar de `npm ci` hasta que
+  alguien con push normal pueda commitear el lockfile (ver nota en
+  `.github/workflows/ci.yml` y `README.md`). Localmente, en este mismo
+  hito, `npm ci` sí se corrió con éxito contra el lockfile completo (ver
+  sección 6), así que el lockfile generado es válido — es exclusivamente
+  la subida a GitHub la que no se pudo completar.
 - **No había daemon de Docker disponible** en este entorno (`docker ps`
   falla: "no such file or directory" en el socket). `compose.yaml` está
   escrito y es correcto, pero no se pudo ejercitar `docker compose up`
