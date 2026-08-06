@@ -178,10 +178,43 @@ pasos:
 | `DEV_AUTH_ENABLED` fuera de `development` | OK — `404` en `/auth/dev-login` aunque la variable esté en `true` |
 | Flujo completo en navegador real (Playwright + Chromium) | OK — login → selector de escuela → shell, recarga de página conserva sesión y escuela activa, layout responsive (375px) revisado visualmente |
 | Ausencia de secretos | OK — sin `.env` commiteado, sin patrones de credenciales en el árbol versionado (`grep` dirigido) |
-| Árbol de Git limpio | Ver sección 7 (commits) |
+| Árbol de Git limpio (local, con los 6 commits) | OK |
+| `npm ci` (instalación limpia y reproducible, contra el lockfile local completo) | OK — corrido al inicio del hito, 684 paquetes |
 
 ## 7. Bloqueos y cómo se resolvieron
 
+- **No hubo acceso de escritura directa a Git (`git push`) en este
+  entorno.** `git push` a `agent/application-foundation` devolvió `403`
+  tanto desde el checkout de trabajo como desde un clon nuevo hecho
+  específicamente para tener credenciales inyectadas (`/workspace/...`,
+  siguiendo las instrucciones de la herramienta `add_repo`); el propio
+  estado del proxy de red confirmó que el `403` viene de GitHub (no del
+  proxy: el `CONNECT` a `github.com` se resuelve sin problemas, tal como
+  lo prueban el `clone`/`fetch`, que sí funcionan). Es coherente con que
+  este entorno da acceso de lectura a Git pero reserva la escritura a las
+  herramientas MCP de GitHub. Se resolvió publicando los 6 commits con
+  `mcp__github__push_files` (uno por commit, mismo mensaje y mismo
+  agrupamiento de archivos que localmente), preservando el historial
+  granular. **Excepción: `package-lock.json` (365 KB, ~10.300 líneas) no
+  se pudo commitear** — `push_files` requiere el contenido completo del
+  archivo como parámetro literal, y las herramientas de esta sesión
+  truncan salidas de más de ~300 KB, por lo que no había forma confiable
+  de trasladar el archivo generado byte a byte sin riesgo real de
+  corromperlo (y un lockfile corrupto rompe silenciosamente `npm ci` en
+  CI de una forma difícil de diagnosticar para quien revise el PR). Se
+  decidió no arriesgar esa corrupción: `package.json` de cada workspace
+  sí se commiteó (son pequeños y se revisaron a mano), pero
+  `package-lock.json` queda pendiente. Mientras tanto, CI y las
+  instrucciones de desarrollo local usan `npm install` en lugar de
+  `npm ci` (ver nota en `.github/workflows/ci.yml` y `README.md`).
+  **Acción pendiente para quien tenga acceso de push normal:** correr
+  `npm install` una vez, commitear el `package-lock.json` resultante, y
+  volver a cambiar `npm ci` en `.github/workflows/ci.yml`
+  (`cache: 'npm'` en el paso de `actions/setup-node` también se puede
+  restaurar en ese momento). Localmente, en este mismo hito, `npm ci` sí
+  se corrió con éxito contra el lockfile completo (ver sección 6), así
+  que el lockfile generado es válido — es exclusivamente la subida a
+  GitHub la que quedó pendiente.
 - **No había daemon de Docker disponible** en este entorno (`docker ps`
   falla: "no such file or directory" en el socket). `compose.yaml` está
   escrito y es correcto, pero no se pudo ejercitar `docker compose up`

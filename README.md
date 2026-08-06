@@ -55,6 +55,14 @@ La primera etapa dejará completamente operativa la Formación General y conserv
 Requisitos: Node.js 20–22, npm ≥ 10, y PostgreSQL 16 accesible (vía
 `compose.yaml` con Docker, o una instancia local).
 
+> **Nota temporal:** `package-lock.json` todavía no está commiteado (el
+> entorno en el que se desarrolló este hito no tenía acceso de escritura a
+> Git; ver `WORKLOG.md`, sección "Bloqueos"). Por eso se usa `npm install`
+> aquí y en CI en lugar de `npm ci`. La primera persona con acceso de
+> push debería correr `npm install`, commitear el `package-lock.json`
+> resultante y volver a cambiar CI a `npm ci` para una instalación
+> estrictamente reproducible.
+
 ```bash
 # 1. Instalar dependencias de todo el monorepo
 npm install
