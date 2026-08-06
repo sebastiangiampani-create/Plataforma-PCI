@@ -1,0 +1,46 @@
+{
+  "name": "plataforma-pci",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Motor institucional para diseñar, validar, simular, implementar, revisar y versionar el Proyecto Curricular Institucional.",
+  "engines": {
+    "node": ">=20 <23",
+    "npm": ">=10"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build:libs": "npm run build --workspace packages/config && npm run build --workspace packages/domain && npm run build --workspace packages/database",
+    "predev": "npm run build:libs",
+    "dev": "concurrently -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm run dev --workspace apps/api",
+    "dev:web": "npm run dev --workspace apps/web",
+    "prebuild": "npm run build:libs",
+    "build": "npm run build --workspace apps/api && npm run build --workspace apps/web",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "pretypecheck": "npm run build:libs",
+    "typecheck": "npm run typecheck --workspace apps/api && npm run typecheck --workspace apps/web",
+    "pretest": "npm run build:libs",
+    "test": "npm run test --workspaces --if-present",
+    "db:migrate": "npm run migrate:up --workspace packages/database",
+    "db:migrate:down": "npm run migrate:down --workspace packages/database",
+    "db:migrate:status": "npm run migrate:status --workspace packages/database",
+    "db:seed": "npm run seed --workspace packages/database"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@types/node": "^22.9.0",
+    "concurrently": "^9.0.1",
+    "eslint": "^9.13.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.13.0"
+  }
+}
