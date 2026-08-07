@@ -28,9 +28,11 @@
     "typecheck": "npm run typecheck --workspace apps/api && npm run typecheck --workspace apps/web",
     "pretest": "npm run build:libs",
     "test": "npm run test --workspaces --if-present",
+    "predb:migrate": "npm run build:libs",
     "db:migrate": "npm run migrate:up --workspace packages/database",
     "db:migrate:down": "npm run migrate:down --workspace packages/database",
     "db:migrate:status": "npm run migrate:status --workspace packages/database",
+    "predb:seed": "npm run build:libs",
     "db:seed": "npm run seed --workspace packages/database"
   },
   "devDependencies": {
