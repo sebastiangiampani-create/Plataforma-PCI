@@ -122,7 +122,9 @@ export function App() {
             onSelect={handleSelectSchool}
           />
         ) : null}
-        {phase === 'shell' && activeSchool ? <ShellPage activeSchool={activeSchool} /> : null}
+        {phase === 'shell' && activeSchool && session ? (
+          <ShellPage token={session.token} activeSchool={activeSchool} />
+        ) : null}
       </main>
     </div>
   );

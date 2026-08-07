@@ -1,10 +1,16 @@
 import { z } from 'zod';
 import {
   apiErrorResponseSchema,
+  createCurricularImportRequestSchema,
+  curricularImportListItemSchema,
+  curricularImportSummarySchema,
   devLoginRequestSchema,
   schoolSummarySchema,
   selectSchoolRequestSchema,
   sessionResponseSchema,
+  type CreateCurricularImportRequest,
+  type CurricularImportListItem,
+  type CurricularImportSummary,
   type DevLoginRequest,
   type SchoolSummary,
   type SessionResponse,
@@ -80,5 +86,53 @@ export function selectActiveSchool(token: string, schoolId: string): Promise<Ses
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify(validated),
+  });
+}
+
+export function createCurricularImport(
+  token: string,
+  payload: CreateCurricularImportRequest,
+): Promise<CurricularImportSummary> {
+  const validated = createCurricularImportRequestSchema.parse(payload);
+  return request('/curricular-imports', curricularImportSummarySchema, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(validated),
+  });
+}
+
+export function listCurricularImports(
+  token: string,
+  schoolId?: string,
+): Promise<CurricularImportListItem[]> {
+  const query = schoolId ? `?schoolId=${encodeURIComponent(schoolId)}` : '';
+  return request(`/curricular-imports${query}`, z.array(curricularImportListItemSchema), {
+    headers: authHeaders(token),
+  });
+}
+
+export function getCurricularImport(token: string, id: string): Promise<CurricularImportSummary> {
+  return request(`/curricular-imports/${id}`, curricularImportSummarySchema, {
+    headers: authHeaders(token),
+  });
+}
+
+export function confirmCurricularImport(
+  token: string,
+  id: string,
+): Promise<CurricularImportSummary> {
+  return request(`/curricular-imports/${id}/confirm`, curricularImportSummarySchema, {
+    method: 'POST',
+    headers: authHeaders(token),
+  });
+}
+
+export function revertCurricularImport(
+  token: string,
+  id: string,
+): Promise<CurricularImportSummary> {
+  return request(`/curricular-imports/${id}/revert`, curricularImportSummarySchema, {
+    method: 'POST',
+    headers: authHeaders(token),
   });
 }

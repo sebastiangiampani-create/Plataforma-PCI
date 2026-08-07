@@ -378,3 +378,27 @@ Detalle completo del diseño y sus decisiones de alcance en
 - Suite completa verificada de nuevo tras este cambio: `format:check`,
   `lint`, `typecheck`, `test` (65 tests, todos los workspaces) y `build`,
   todo verde.
+
+## 12. UI web del importador curricular
+
+`ShellPage` deja de ser un placeholder puro: ahora monta
+`CurricularImportsPage` (`apps/web/src/pages/CurricularImportsPage.tsx`),
+que cubre todo el flujo de la Fase 3 desde el navegador — listado de
+importaciones con conteos por estado, formulario para subir/pegar un CSV,
+previsualización fila por fila con badges de estado y errores, y botones de
+confirmar/revertir según el estado real de la importación. Cliente API
+extendido (`apps/web/src/lib/api-client.ts`) con las 5 funciones
+correspondientes, validadas con los mismos contratos Zod que usa la API.
+
+- 4 tests nuevos (`apps/web/test/api-client.test.ts`,
+  `apps/web/test/CurricularImportsPage.test.tsx`) cubriendo el flujo
+  crear → previsualizar → confirmar con Testing Library.
+- Verificado además en navegador real con Playwright (API + web
+  levantadas de verdad, no mockeadas): login → selección de escuela →
+  crear importación con filas válidas/inválidas/duplicadas → previsualizar
+  → confirmar (importación parcial visible: la fila inválida queda afuera)
+  → revertir → volver al listado y ver el historial persistido. Capturas
+  de pantalla revisadas a mano; datos de prueba borrados de la base al
+  terminar.
+- Suite completa verde tras el cambio: `format:check`, `lint`,
+  `typecheck`, `test` (73 tests, todos los workspaces) y `build`.

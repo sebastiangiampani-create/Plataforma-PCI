@@ -83,6 +83,14 @@ body {
   max-width: 720px;
 }
 
+.pci-shell-content {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
 .pci-card h1,
 .pci-card h2 {
   margin-top: 0;
@@ -181,6 +189,97 @@ body {
   padding: 1.5rem;
   color: var(--pci-text-muted);
   text-align: center;
+}
+
+.pci-field textarea {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--pci-border);
+  border-radius: var(--pci-radius);
+  font-size: 0.875rem;
+  font-family: ui-monospace, monospace;
+  resize: vertical;
+}
+
+.pci-imports-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.pci-imports-header h2 {
+  margin: 0;
+}
+
+.pci-imports-header .pci-button,
+.pci-imports-actions .pci-button {
+  width: auto;
+}
+
+.pci-imports-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.pci-table-wrap {
+  overflow-x: auto;
+}
+
+.pci-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.pci-table th,
+.pci-table td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--pci-border);
+  white-space: nowrap;
+}
+
+.pci-table td:last-child {
+  white-space: normal;
+}
+
+.pci-table__row {
+  cursor: pointer;
+}
+
+.pci-table__row:hover {
+  background: var(--pci-bg);
+}
+
+.pci-table__muted {
+  color: var(--pci-text-muted);
+  font-size: 0.75rem;
+}
+
+.pci-badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.pci-badge--valid,
+.pci-badge--imported {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.pci-badge--invalid {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.pci-badge--duplicate {
+  background: #fef3c7;
+  color: #92400e;
 }
 
 @media (max-width: 640px) {
