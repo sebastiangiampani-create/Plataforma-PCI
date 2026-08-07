@@ -46,13 +46,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
 
-      # NOTA: usa "npm install" en lugar de "npm ci" porque package-lock.json
-      # todavía no está commiteado (ver README.md y WORKLOG.md, sección
-      # "Bloqueos"). Cuando se agregue el lockfile, cambiar a "npm ci" y
-      # restaurar "cache: npm" arriba.
-      - name: Install dependencies
-        run: npm install
+      - name: Install dependencies (clean)
+        run: npm ci
 
       - name: Format check
         run: npm run format:check

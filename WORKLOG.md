@@ -214,19 +214,17 @@ pasos:
   la integración de GitHub de esta sesión (o publique estos commits por
   otra vía) para completar la apertura del Pull Request.
 
-- **`package-lock.json` (365 KB, ~10.300 líneas) tampoco se hubiera
-  podido commitear vía `push_files`** aunque el permiso anterior hubiera
-  estado disponible: esa herramienta requiere el contenido completo del
-  archivo como parámetro literal, y las herramientas de esta sesión
-  truncan salidas de más de ~300 KB, por lo que no había forma confiable
-  de trasladar el archivo generado byte a byte sin riesgo real de
-  corromperlo. Por las dudas, se ajustó CI y las instrucciones de
-  desarrollo local para usar `npm install` en lugar de `npm ci` hasta que
-  alguien con push normal pueda commitear el lockfile (ver nota en
-  `.github/workflows/ci.yml` y `README.md`). Localmente, en este mismo
-  hito, `npm ci` sí se corrió con éxito contra el lockfile completo (ver
-  sección 6), así que el lockfile generado es válido — es exclusivamente
-  la subida a GitHub la que no se pudo completar.
+- **ACTUALIZACIÓN (resuelto):** cuando el permiso de escritura se
+  arregló (ver más arriba), la publicación final se hizo con `git push`
+  normal desde un clon con credenciales (no con `push_files`), así que
+  `package-lock.json` (365 KB, ~10.300 líneas) **sí llegó completo al
+  repositorio** — la limitación de tamaño era exclusiva de la API basada
+  en parámetros de texto (`push_files`/`create_or_update_file`), no de
+  `git push`, que transfiere objetos empaquetados sin ese límite. Se
+  revirtió el workaround: CI y las instrucciones de desarrollo local
+  vuelven a usar `npm ci` (instalación limpia y reproducible contra el
+  lockfile commiteado), tal como se había validado localmente desde el
+  principio (ver sección 6).
 - **No había daemon de Docker disponible** en este entorno (`docker ps`
   falla: "no such file or directory" en el socket). `compose.yaml` está
   escrito y es correcto, pero no se pudo ejercitar `docker compose up`
