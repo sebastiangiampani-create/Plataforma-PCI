@@ -203,6 +203,26 @@ body {
   opacity: 0.6;
 }
 
+.pci-divider {
+  border: none;
+  border-top: 1px solid var(--pci-border);
+  margin: 1.5rem 0;
+}
+
+.pci-checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+
+.pci-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: normal;
+}
+
 .pci-filters {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

@@ -35,10 +35,14 @@ describe('PciProjectPage', () => {
       updatedAt: new Date().toISOString(),
     };
 
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(jsonResponse([])) // listado inicial
-      .mockResolvedValueOnce(jsonResponse(draftProject)); // crear
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url.includes('/curricular-spaces')) return Promise.resolve(jsonResponse([]));
+      if (url.includes('/curricular-taxonomy')) return Promise.resolve(jsonResponse([]));
+      if (init?.method === 'POST' && url.includes('/pci-projects')) {
+        return Promise.resolve(jsonResponse(draftProject));
+      }
+      return Promise.resolve(jsonResponse([]));
+    });
     vi.stubGlobal('fetch', fetchMock);
 
     render(<PciProjectPage token="token" />);
@@ -81,10 +85,14 @@ describe('PciProjectPage', () => {
       publishedAt: new Date().toISOString(),
     };
 
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(jsonResponse([project])) // listado inicial
-      .mockResolvedValueOnce(jsonResponse(publishedVersion)); // publicar
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url.includes('/curricular-spaces')) return Promise.resolve(jsonResponse([]));
+      if (url.includes('/curricular-taxonomy')) return Promise.resolve(jsonResponse([]));
+      if (init?.method === 'POST' && url.includes('/publish')) {
+        return Promise.resolve(jsonResponse(publishedVersion));
+      }
+      return Promise.resolve(jsonResponse([project]));
+    });
     vi.stubGlobal('fetch', fetchMock);
 
     render(<PciProjectPage token="token" />);

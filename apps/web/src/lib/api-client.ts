@@ -1,11 +1,15 @@
 import { z } from 'zod';
 import {
   apiErrorResponseSchema,
+  assignContentRequestSchema,
+  contentAssignmentSummarySchema,
   createCurricularImportRequestSchema,
+  createCurricularSpaceRequestSchema,
   createPciProjectRequestSchema,
   curricularContentListResponseSchema,
   curricularImportListItemSchema,
   curricularImportSummarySchema,
+  curricularSpaceSummarySchema,
   curricularTaxonomyAreaSchema,
   devLoginRequestSchema,
   pciProjectSummarySchema,
@@ -14,11 +18,15 @@ import {
   selectSchoolRequestSchema,
   sessionResponseSchema,
   updatePciVersionRequestSchema,
+  type AssignContentRequest,
+  type ContentAssignmentSummary,
   type CreateCurricularImportRequest,
+  type CreateCurricularSpaceRequest,
   type CreatePciProjectRequest,
   type CurricularContentListResponse,
   type CurricularImportListItem,
   type CurricularImportSummary,
+  type CurricularSpaceSummary,
   type CurricularTaxonomyArea,
   type DevLoginRequest,
   type PciProjectSummary,
@@ -226,4 +234,64 @@ export function publishPciVersion(token: string, versionId: string): Promise<Pci
     method: 'POST',
     headers: authHeaders(token),
   });
+}
+
+export function fetchCurricularSpaces(
+  token: string,
+  versionId: string,
+): Promise<CurricularSpaceSummary[]> {
+  return request(
+    `/pci-versions/${versionId}/curricular-spaces`,
+    z.array(curricularSpaceSummarySchema),
+    { headers: authHeaders(token) },
+  );
+}
+
+export function createCurricularSpace(
+  token: string,
+  versionId: string,
+  payload: CreateCurricularSpaceRequest,
+): Promise<CurricularSpaceSummary> {
+  const validated = createCurricularSpaceRequestSchema.parse(payload);
+  return request(`/pci-versions/${versionId}/curricular-spaces`, curricularSpaceSummarySchema, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(validated),
+  });
+}
+
+export function fetchContentAssignments(
+  token: string,
+  spaceId: string,
+): Promise<ContentAssignmentSummary[]> {
+  return request(
+    `/curricular-spaces/${spaceId}/content-assignments`,
+    z.array(contentAssignmentSummarySchema),
+    { headers: authHeaders(token) },
+  );
+}
+
+export function assignContentToSpace(
+  token: string,
+  spaceId: string,
+  payload: AssignContentRequest,
+): Promise<ContentAssignmentSummary[]> {
+  const validated = assignContentRequestSchema.parse(payload);
+  return request(
+    `/curricular-spaces/${spaceId}/content-assignments`,
+    z.array(contentAssignmentSummarySchema),
+    { method: 'POST', headers: authHeaders(token), body: JSON.stringify(validated) },
+  );
+}
+
+export function unassignContentFromSpace(
+  token: string,
+  spaceId: string,
+  contentId: string,
+): Promise<ContentAssignmentSummary[]> {
+  return request(
+    `/curricular-spaces/${spaceId}/content-assignments/${contentId}`,
+    z.array(contentAssignmentSummarySchema),
+    { method: 'DELETE', headers: authHeaders(token) },
+  );
 }

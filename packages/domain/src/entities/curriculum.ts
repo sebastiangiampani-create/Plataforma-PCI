@@ -1,4 +1,4 @@
-import type { RecordStatus } from './enums.js';
+import type { CharacterType, FormatType, RecordStatus, SpaceType } from './enums.js';
 
 /**
  * Contratos preparatorios del núcleo curricular (Formación General / Orientada).
@@ -60,20 +60,6 @@ export interface CurricularContent {
   status: RecordStatus;
   archivedAt: string | null;
 }
-
-export type SpaceType = 'AUTONOMO' | 'INTEGRADO' | 'ARTICULADOR';
-
-export type FormatType =
-  | 'NIVEL'
-  | 'LABORATORIO'
-  | 'TALLER'
-  | 'SEMINARIO'
-  | 'PROYECTO'
-  | 'PROYECTO_SOCIOCOMUNITARIO_SOLIDARIO'
-  | 'ORIENTACION'
-  | 'PROYECTO_VINCULACION_FUTURO';
-
-export type CharacterType = 'OBLIGATORIO' | 'ELECTIVO';
 
 export interface CurricularSpace {
   id: string;

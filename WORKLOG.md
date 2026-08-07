@@ -482,3 +482,59 @@ nueva:
   prueba borrados de la base al terminar.
 - Suite completa verde: `format:check`, `lint`, `typecheck`, `test`
   (100 tests, todos los workspaces) y `build`.
+
+## 15. Espacios curriculares y asignación de contenido de la bolsa
+
+Última pieza de esta sesión de Fase 4: con una `pci_version` real
+disponible (sección 14), ya se puede crear un espacio curricular
+(`curricular_spaces`) y asignarle contenido real de la bolsa
+(`content_assignments`). Aplica reglas ya documentadas, sin inventar
+ninguna:
+
+- **`POST /pci-versions/:versionId/curricular-spaces`**: crea el espacio
+  con sus áreas aportantes (`space_areas`, mínimo 1, exigido en el
+  contrato Zod). Aplica **PCI-STR-001/002** reutilizando
+  `getTermsForLevel` (ya escrito en `packages/domain/src/rules/term-level.ts`
+  desde Application Foundation, nunca usado hasta ahora): rechaza
+  `startTerm`/`endTerm` que no coincidan exactamente con los del nivel
+  elegido, no cualquier par de cuatrimestres consecutivos. Aplica
+  **PCI-ORI-002**: un `PROYECTO_VINCULACION_FUTURO` fuera de Nivel 5 se
+  rechaza explícitamente (aunque STR-002 ya lo dejaría en C9-C10 al ser
+  Nivel 5, la regla del formato se valida aparte para que quede clara).
+  Ambas validaciones viven en el propio schema Zod
+  (`packages/domain/src/contracts/curricular-spaces.ts`, `superRefine`),
+  así que el error llega ya armado con el código de regla en el mensaje.
+- **`POST /curricular-spaces/:id/content-assignments`** /
+  **`DELETE .../content-assignments/:contentId`**: asigna/desasigna un
+  contenido real de `curricular_contents` (no permite asignar uno
+  archivado; no permite asignar el mismo contenido dos veces al mismo
+  espacio).
+- Todo lo anterior respeta **PCI-VER-001**: ninguna de estas operaciones
+  se permite si la versión ya está `PUBLISHED` (mismo criterio de
+  inmutabilidad que ya se aplicaba a `pedagogicalRationale`). Ver espacios
+  y sus contenidos ya asignados sí sigue funcionando en una versión
+  publicada (de solo lectura).
+- **`SpaceType`/`FormatType`/`CharacterType`** se movieron de
+  `entities/curriculum.ts` a `entities/enums.ts` como arrays `as const`
+  (mismo patrón que `PCI_STATUSES`), para poder derivar `z.enum(...)` sin
+  duplicar la lista de valores — refactor sin cambios de comportamiento,
+  confirmado porque `@pci/domain`/`@pci/database` siguen pasando todos
+  sus tests después del cambio.
+- **`CurricularSpacesPanel`** (`apps/web`), embebido en el detalle del
+  proyecto PCI: alta de espacio (nivel → cuatrimestres calculados en el
+  cliente con el mismo `getTermsForLevel`, no reinventado), listado, y
+  dentro del detalle de cada espacio: contenidos ya asignados (con
+  "Quitar" si la versión no está publicada) y un buscador sobre la bolsa
+  real para asignar contenido nuevo.
+- Tests: 9 de integración contra PostgreSQL real (alta con áreas
+  reales, `areaCodes` inexistentes, código repetido, aislamiento entre
+  escuelas, PCI-VER-001 al crear y al asignar, asignar/desasignar
+  contenido real, no duplicar asignación, listado por versión), 5 del
+  contrato Zod (PCI-STR-002 acepta/rechaza, PCI-ORI-002 acepta/rechaza,
+  áreas mínimas), 2 e2e HTTP, 4 web. Verificado también en navegador real
+  con Playwright: crear espacio (Nivel 3 → C5-C6 calculado
+  automáticamente) → buscar "Internet" en la bolsa real → asignar → el
+  buscador marca "Ya asignado" → quitar disponible en la tabla de
+  asignados. Datos de prueba borrados de la base al terminar.
+- Suite completa verde: `format:check`, `lint`, `typecheck`, `test`
+  (121 tests, todos los workspaces) y `build`.

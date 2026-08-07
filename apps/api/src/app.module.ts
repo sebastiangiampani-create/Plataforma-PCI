@@ -8,6 +8,7 @@ import { SchoolsModule } from './modules/schools/schools.module.js';
 import { CurricularImportsModule } from './modules/curricular-imports/curricular-imports.module.js';
 import { CurricularContentsModule } from './modules/curricular-contents/curricular-contents.module.js';
 import { PciProjectsModule } from './modules/pci-projects/pci-projects.module.js';
+import { CurricularSpacesModule } from './modules/curricular-spaces/curricular-spaces.module.js';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PciProjectsModule } from './modules/pci-projects/pci-projects.module.js
     CurricularImportsModule,
     CurricularContentsModule,
     PciProjectsModule,
+    CurricularSpacesModule,
   ],
 })
 export class AppModule {}

@@ -1,12 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   ApiError,
+  assignContentToSpace,
   confirmCurricularImport,
   createCurricularImport,
+  createCurricularSpace,
   createPciProject,
   devLogin,
   fetchAccessibleSchools,
   fetchCurricularContents,
+  fetchCurricularSpaces,
   fetchCurricularTaxonomy,
   fetchPciProjects,
   listCurricularImports,
@@ -304,6 +307,91 @@ describe('publishPciVersion', () => {
     expect(result.status).toBe('PUBLISHED');
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining(`/pci-versions/${version.id}/publish`),
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+});
+
+describe('createCurricularSpace', () => {
+  it('crea el espacio con sus áreas aportantes', async () => {
+    const space = {
+      id: '11111111-1111-4111-8111-111111111111',
+      pciVersionId: '22222222-2222-4222-8222-222222222222',
+      code: 'LAB-1',
+      name: 'Laboratorio 1',
+      componentCode: 'FORMACION_GENERAL',
+      orientationCode: null,
+      spaceType: 'AUTONOMO',
+      formatType: 'LABORATORIO',
+      characterType: 'OBLIGATORIO',
+      levelNumber: 3,
+      startTerm: 5,
+      endTerm: 6,
+      objectives: null,
+      problemContext: null,
+      observations: null,
+      status: 'ACTIVE',
+      areas: [{ code: 'CIENCIAS_NATURALES', name: 'Ciencias Naturales', responsibilityText: null }],
+      contentCount: 0,
+    };
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(space));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await createCurricularSpace('token', space.pciVersionId, {
+      code: 'LAB-1',
+      name: 'Laboratorio 1',
+      componentCode: 'FORMACION_GENERAL',
+      spaceType: 'AUTONOMO',
+      formatType: 'LABORATORIO',
+      characterType: 'OBLIGATORIO',
+      levelNumber: 3,
+      startTerm: 5,
+      endTerm: 6,
+      areaCodes: ['CIENCIAS_NATURALES'],
+    });
+
+    expect(result.areas).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining(`/pci-versions/${space.pciVersionId}/curricular-spaces`),
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+});
+
+describe('fetchCurricularSpaces', () => {
+  it('parsea el listado de espacios de una versión', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse([])));
+    const result = await fetchCurricularSpaces('token', '22222222-2222-4222-8222-222222222222');
+    expect(result).toEqual([]);
+  });
+});
+
+describe('assignContentToSpace', () => {
+  it('asigna un contenido y devuelve la lista actualizada', async () => {
+    const assignments = [
+      {
+        id: '33333333-3333-4333-8333-333333333333',
+        curricularContentId: '44444444-4444-4444-8444-444444444444',
+        code: 'c1',
+        contentText: 'Texto',
+        areaName: 'Matemática',
+        subjectName: 'Matemática',
+        axisName: 'Eje 1',
+        coverageWeight: 1,
+        notes: null,
+        createdAt: new Date().toISOString(),
+      },
+    ];
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(assignments));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await assignContentToSpace('token', '11111111-1111-4111-8111-111111111111', {
+      curricularContentId: '44444444-4444-4444-8444-444444444444',
+    });
+
+    expect(result).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/content-assignments'),
       expect.objectContaining({ method: 'POST' }),
     );
   });

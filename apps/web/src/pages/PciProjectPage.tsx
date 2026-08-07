@@ -11,6 +11,7 @@ import {
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { LoadingState } from '../components/LoadingState';
+import { CurricularSpacesPanel } from './CurricularSpacesPanel';
 
 type View = 'list' | 'form' | 'detail';
 
@@ -308,6 +309,9 @@ function ProjectDetail({
           creá una versión nueva.
         </p>
       ) : null}
+
+      <hr className="pci-divider" />
+      <CurricularSpacesPanel token={token} versionId={version.id} isPublished={isPublished} />
     </div>
   );
 }
