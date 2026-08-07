@@ -5,6 +5,8 @@ import {
   createCurricularImport,
   devLogin,
   fetchAccessibleSchools,
+  fetchCurricularContents,
+  fetchCurricularTaxonomy,
   listCurricularImports,
 } from '../src/lib/api-client';
 
@@ -162,5 +164,78 @@ describe('listCurricularImports', () => {
     const result = await listCurricularImports('token');
     expect(result).toHaveLength(1);
     expect(result[0]?.rowCount).toBe(2);
+  });
+});
+
+describe('fetchCurricularContents', () => {
+  it('construye la query string con los filtros y omite los vacíos', async () => {
+    const response = { items: [], total: 0, limit: 20, offset: 0 };
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(response));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await fetchCurricularContents('token', {
+      componentCode: 'FORMACION_GENERAL',
+      areaCode: 'MATEMATICA',
+      subjectCode: undefined,
+      search: '',
+      limit: 20,
+      offset: 0,
+    });
+
+    const calledUrl = fetchMock.mock.calls[0]?.[0] as string;
+    expect(calledUrl).toContain('componentCode=FORMACION_GENERAL');
+    expect(calledUrl).toContain('areaCode=MATEMATICA');
+    expect(calledUrl).not.toContain('subjectCode');
+    expect(calledUrl).not.toContain('search=');
+  });
+
+  it('parsea la respuesta paginada', async () => {
+    const response = {
+      items: [
+        {
+          id: '11111111-1111-4111-8111-111111111111',
+          code: 'c1',
+          contentText: 'Texto',
+          status: 'ACTIVE',
+          componentCode: 'FORMACION_GENERAL',
+          areaCode: 'MATEMATICA',
+          areaName: 'Matemática',
+          subjectCode: 'MATEMATICA_MATEMATICA',
+          subjectName: 'Matemática',
+          axisCode: 'MATEMATICA_MATEMATICA_EJE_001',
+          axisName: 'Eje 1',
+        },
+      ],
+      total: 60,
+      limit: 20,
+      offset: 0,
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(response)));
+
+    const result = await fetchCurricularContents('token');
+    expect(result.total).toBe(60);
+    expect(result.items[0]?.code).toBe('c1');
+  });
+});
+
+describe('fetchCurricularTaxonomy', () => {
+  it('parsea la taxonomía anidada', async () => {
+    const taxonomy = [
+      {
+        code: 'MATEMATICA',
+        name: 'Matemática',
+        subjects: [
+          {
+            code: 'MATEMATICA_MATEMATICA',
+            name: 'Matemática',
+            axes: [{ code: 'MATEMATICA_MATEMATICA_EJE_001', name: 'Eje 1' }],
+          },
+        ],
+      },
+    ];
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(taxonomy)));
+
+    const result = await fetchCurricularTaxonomy('token');
+    expect(result[0]?.subjects[0]?.axes[0]?.code).toBe('MATEMATICA_MATEMATICA_EJE_001');
   });
 });

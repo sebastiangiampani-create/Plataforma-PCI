@@ -191,6 +191,42 @@ body {
   text-align: center;
 }
 
+.pci-field select {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--pci-border);
+  border-radius: var(--pci-radius);
+  font-size: 1rem;
+  background: var(--pci-surface);
+}
+
+.pci-field select:disabled {
+  opacity: 0.6;
+}
+
+.pci-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.pci-filters__search-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pci-filters__search-row input {
+  flex: 1;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--pci-border);
+  border-radius: var(--pci-radius);
+  font-size: 1rem;
+}
+
+.pci-filters__search .pci-button {
+  width: auto;
+}
+
 .pci-field textarea {
   padding: 0.625rem 0.75rem;
   border: 1px solid var(--pci-border);

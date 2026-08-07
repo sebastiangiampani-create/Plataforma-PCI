@@ -2,15 +2,19 @@ import { z } from 'zod';
 import {
   apiErrorResponseSchema,
   createCurricularImportRequestSchema,
+  curricularContentListResponseSchema,
   curricularImportListItemSchema,
   curricularImportSummarySchema,
+  curricularTaxonomyAreaSchema,
   devLoginRequestSchema,
   schoolSummarySchema,
   selectSchoolRequestSchema,
   sessionResponseSchema,
   type CreateCurricularImportRequest,
+  type CurricularContentListResponse,
   type CurricularImportListItem,
   type CurricularImportSummary,
+  type CurricularTaxonomyArea,
   type DevLoginRequest,
   type SchoolSummary,
   type SessionResponse,
@@ -135,4 +139,39 @@ export function revertCurricularImport(
     method: 'POST',
     headers: authHeaders(token),
   });
+}
+
+export interface CurricularContentsFilters {
+  componentCode?: string;
+  areaCode?: string;
+  subjectCode?: string;
+  axisCode?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export function fetchCurricularContents(
+  token: string,
+  filters: CurricularContentsFilters = {},
+): Promise<CurricularContentListResponse> {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== undefined && value !== '') params.set(key, String(value));
+  }
+  const query = params.toString() ? `?${params.toString()}` : '';
+  return request(`/curricular-contents${query}`, curricularContentListResponseSchema, {
+    headers: authHeaders(token),
+  });
+}
+
+export function fetchCurricularTaxonomy(
+  token: string,
+  componentCode = 'FORMACION_GENERAL',
+): Promise<CurricularTaxonomyArea[]> {
+  return request(
+    `/curricular-taxonomy?componentCode=${encodeURIComponent(componentCode)}`,
+    z.array(curricularTaxonomyAreaSchema),
+    { headers: authHeaders(token) },
+  );
 }

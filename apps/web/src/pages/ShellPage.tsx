@@ -1,4 +1,5 @@
 import type { SchoolSummary } from '@pci/domain';
+import { CurricularContentsPage } from './CurricularContentsPage';
 import { CurricularImportsPage } from './CurricularImportsPage';
 
 export function ShellPage({ token, activeSchool }: { token: string; activeSchool: SchoolSummary }) {
@@ -10,10 +11,10 @@ export function ShellPage({ token, activeSchool }: { token: string; activeSchool
           Escuela activa: <strong>{activeSchool.code}</strong> · Rol: {activeSchool.roleCode}
         </p>
         <div className="pci-placeholder">
-          El resto de los módulos curriculares (bolsa de contenidos, mapa curricular, trazabilidad)
-          se incorporarán en próximos hitos.
+          El mapa curricular y la trazabilidad se incorporarán en próximos hitos.
         </div>
       </div>
+      <CurricularContentsPage token={token} />
       <CurricularImportsPage token={token} />
     </div>
   );

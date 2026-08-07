@@ -402,3 +402,36 @@ correspondientes, validadas con los mismos contratos Zod que usa la API.
   terminar.
 - Suite completa verde tras el cambio: `format:check`, `lint`,
   `typecheck`, `test` (73 tests, todos los workspaces) y `build`.
+
+## 13. Bolsa de contenidos navegable (Fase 4, primera pieza)
+
+Primer paso de "Reconstruir la matriz histórica en el nuevo núcleo"
+(`docs/04-roadmap.md`, Fase 4): navegar y filtrar los 1155 contenidos
+reales de Formación General ya sembrados. Deliberadamente **solo lectura**
+por ahora — selección/arrastre/asignación a espacios curriculares queda
+para cuando exista un flujo real de creación de proyectos/versiones PCI
+(no hay ninguno todavía, así que no hay dónde asignar sin inventar datos).
+
+- **`GET /curricular-contents`**: filtra por `componentCode` (default
+  `FORMACION_GENERAL`), `areaCode`, `subjectCode`, `axisCode` y `search`
+  (`ILIKE` sobre `content_text`), con paginación (`limit`/`offset`,
+  validados con Zod vía el mismo patrón de pipe a nivel de parámetro que
+  ya se usa en el resto de la API).
+- **`GET /curricular-taxonomy`**: área → materia → eje anidado, pero solo
+  con las combinaciones que realmente tienen contenido activo cargado (no
+  la taxonomía completa) — para armar filtros en cascada que nunca
+  ofrezcan una opción con cero resultados.
+- **`CurricularContentsPage`** (`apps/web`): filtros en cascada
+  (área → materia → eje, cada uno deshabilitado hasta elegir el anterior),
+  búsqueda de texto y tabla paginada (20 por página).
+- Tests: 6 de integración contra PostgreSQL real (paginación real sobre
+  las 1155 filas, filtro por área coincide exactamente con la distribución
+  auditada, cascada materia/eje, búsqueda de texto, taxonomía sin
+  entradas vacías), 3 e2e HTTP del controller, 4 web (cliente API +
+  componente). Verificado también en navegador real con Playwright:
+  listado completo (1155 · 58 páginas), filtro por área (Matemática → 60,
+  coincide con la auditoría), cascada por materia (Ciencias Sociales →
+  Historia → 55), búsqueda de texto ("Internet" → 5 resultados reales, en
+  Tecnologías). Capturas revisadas a mano.
+- Suite completa verde: `format:check`, `lint`, `typecheck`, `test`
+  (84 tests, todos los workspaces) y `build`.
