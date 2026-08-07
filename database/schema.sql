@@ -1,3 +1,10 @@
+-- NOTA (hito Application Foundation): este archivo se conserva como
+-- referencia histórica del esquema definido en el hito Project Foundation.
+-- La fuente de verdad ejecutable ahora son las migraciones ordenadas en
+-- database/migrations/ (aplicadas y revertidas por packages/database).
+-- Cualquier cambio de esquema debe hacerse mediante una nueva migración,
+-- nunca editando este archivo.
+
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TYPE pci_status AS ENUM ('DRAFT','IN_PROGRESS','VALIDATED','PUBLISHED');

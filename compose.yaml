@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pci_dev
+      POSTGRES_PASSWORD: pci_dev_password
+      POSTGRES_DB: pci_dev
+    ports:
+      - '5432:5432'
+    volumes:
+      - pci_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U pci_dev -d pci_dev']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pci_postgres_data:
