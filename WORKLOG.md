@@ -538,3 +538,69 @@ ninguna:
   asignados. Datos de prueba borrados de la base al terminar.
 - Suite completa verde: `format:check`, `lint`, `typecheck`, `test`
   (121 tests, todos los workspaces) y `build`.
+
+## 16. Carga horaria semanal real (`weekly_hours`)
+
+Con espacios curriculares reales ya disponibles (sección 15), esta pieza
+conecta el plan de horas oficial de Formación General
+(`FORMACION_GENERAL_PLAN`, `packages/domain/src/reference-data/`, cargado
+en un hito anterior pero nunca escrito a `weekly_hours` porque todavía no
+existía ningún espacio real al que asociarlo) con la tabla real
+`weekly_hours`, y deja implementadas **PCI-HRS-001/002**:
+
+- **`GET /curricular-spaces/:id/weekly-hours`**: lista las horas ya
+  cargadas para el espacio (por cuatrimestre y área), filtrando
+  explícitamente `source_space_id IS NULL` (horas propias, no
+  articuladas — la carga horaria por articulación queda fuera de
+  alcance, ver deuda técnica abajo).
+- **`GET /curricular-spaces/:id/weekly-hours/suggestions`**: no persiste
+  nada; recorre `FORMACION_GENERAL_PLAN` y devuelve, para las áreas
+  aportantes del espacio y su `levelNumber`, las horas oficiales reales
+  documentadas en `docs/08` — puramente informativo, para que quien
+  carga la versión pueda compararse contra el plan oficial en vez de
+  inventar un número.
+- **`PUT /curricular-spaces/:id/weekly-hours`**: carga/actualiza horas
+  para un (cuatrimestre, área). Valida que el cuatrimestre esté dentro
+  del rango real del espacio (`start_term`-`end_term`, calculado por
+  PCI-STR-002) y que el área sea efectivamente aportante del espacio
+  (`space_areas`) — ambos casos responden 400 con código propio
+  (`TERM_OUTSIDE_SPACE_RANGE`, `AREA_NOT_CONTRIBUTING`). Respeta
+  **PCI-VER-001** (rechaza con 409 si la versión ya está `PUBLISHED`).
+  **PCI-HRS-001/002** ("se valida por cuatrimestre, sin compensar entre
+  cuatrimestres") se cumplen por construcción: cada fila es un
+  (cuatrimestre, área) independiente, sin ningún promedio ni ajuste
+  automático entre cuatrimestres — no hace falta lógica adicional para
+  reforzarlas.
+- **`DELETE /curricular-spaces/:id/weekly-hours/:areaCode/:termNumber`**:
+  elimina una carga puntual (404 si no existía).
+- **Bug real encontrado y corregido**: la unicidad de `weekly_hours` es
+  `UNIQUE (curricular_space_id, term_number, area_id, source_space_id)`,
+  pero Postgres no considera dos `NULL` iguales a los fines de esa
+  restricción — un `INSERT ... ON CONFLICT` sobre filas con
+  `source_space_id IS NULL` (el caso de horas propias, no articuladas)
+  insertaría una fila duplicada en cada actualización en vez de
+  reemplazar el valor. Se resolvió con `DELETE` explícito (filtrando por
+  `source_space_id IS NULL`) seguido de `INSERT`, ambos dentro de la
+  misma transacción. Cubierto por un test de integración dedicado
+  ("actualizar el mismo cuatrimestre/área reemplaza el valor, no duplica
+  filas").
+- **`WeeklyHoursSection`** (`apps/web/src/pages/CurricularSpacesPanel.tsx`),
+  agregada al detalle de cada espacio curricular junto a "Contenidos
+  asignados": muestra las horas oficiales sugeridas, la tabla de horas ya
+  cargadas (con "Quitar" si la versión no está publicada) y un formulario
+  para cargar horas por cuatrimestre/área.
+- Tests: 8 de integración contra PostgreSQL real (sugerencias reales para
+  Matemática Nivel 1, alta y listado, actualizar no duplica, cuatrimestre
+  fuera de rango, área no aportante, PCI-VER-001, eliminar + 404,
+  aislamiento entre escuelas), 2 e2e HTTP. Verificado en navegador real
+  con Playwright: crear proyecto → crear espacio "Matemática Nivel 1" →
+  la sección de carga horaria muestra la sugerencia oficial real (5
+  hs/semana) → cargar C1 = 5 hs → la fila aparece en la tabla → "Quitar"
+  la elimina y vuelve al estado vacío. Datos de prueba generados solo en
+  la base local de desarrollo, no en producción.
+- **PCI-HRS-003/004** (coincidencia con el total del espacio, no doble
+  conteo de horas articuladas) quedan pendientes, ya documentado en el
+  docstring de `packages/domain/src/contracts/weekly-hours.ts`: dependen
+  de un feature de `articulations` que todavía no tiene ningún endpoint.
+- Suite completa verde: `format:check`, `lint`, `typecheck`, `test` (131
+  tests, todos los workspaces) y `build`.

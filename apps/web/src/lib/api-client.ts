@@ -17,7 +17,10 @@ import {
   schoolSummarySchema,
   selectSchoolRequestSchema,
   sessionResponseSchema,
+  setWeeklyHoursRequestSchema,
   updatePciVersionRequestSchema,
+  weeklyHoursEntrySchema,
+  weeklyHoursSuggestionSchema,
   type AssignContentRequest,
   type ContentAssignmentSummary,
   type CreateCurricularImportRequest,
@@ -33,6 +36,9 @@ import {
   type PciVersionSummary,
   type SchoolSummary,
   type SessionResponse,
+  type SetWeeklyHoursRequest,
+  type WeeklyHoursEntry,
+  type WeeklyHoursSuggestion,
 } from '@pci/domain';
 import { webConfig } from './config';
 
@@ -292,6 +298,49 @@ export function unassignContentFromSpace(
   return request(
     `/curricular-spaces/${spaceId}/content-assignments/${contentId}`,
     z.array(contentAssignmentSummarySchema),
+    { method: 'DELETE', headers: authHeaders(token) },
+  );
+}
+
+export function fetchWeeklyHours(token: string, spaceId: string): Promise<WeeklyHoursEntry[]> {
+  return request(`/curricular-spaces/${spaceId}/weekly-hours`, z.array(weeklyHoursEntrySchema), {
+    headers: authHeaders(token),
+  });
+}
+
+export function fetchWeeklyHoursSuggestions(
+  token: string,
+  spaceId: string,
+): Promise<WeeklyHoursSuggestion[]> {
+  return request(
+    `/curricular-spaces/${spaceId}/weekly-hours/suggestions`,
+    z.array(weeklyHoursSuggestionSchema),
+    { headers: authHeaders(token) },
+  );
+}
+
+export function setWeeklyHours(
+  token: string,
+  spaceId: string,
+  payload: SetWeeklyHoursRequest,
+): Promise<WeeklyHoursEntry[]> {
+  const validated = setWeeklyHoursRequestSchema.parse(payload);
+  return request(`/curricular-spaces/${spaceId}/weekly-hours`, z.array(weeklyHoursEntrySchema), {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(validated),
+  });
+}
+
+export function removeWeeklyHours(
+  token: string,
+  spaceId: string,
+  areaCode: string,
+  termNumber: number,
+): Promise<WeeklyHoursEntry[]> {
+  return request(
+    `/curricular-spaces/${spaceId}/weekly-hours/${encodeURIComponent(areaCode)}/${termNumber}`,
+    z.array(weeklyHoursEntrySchema),
     { method: 'DELETE', headers: authHeaders(token) },
   );
 }

@@ -4,6 +4,8 @@ import type {
   CurricularContentSummary,
   CurricularSpaceSummary,
   CurricularTaxonomyArea,
+  WeeklyHoursEntry,
+  WeeklyHoursSuggestion,
 } from '@pci/domain';
 import {
   ApiError,
@@ -13,6 +15,10 @@ import {
   fetchCurricularContents,
   fetchCurricularSpaces,
   fetchCurricularTaxonomy,
+  fetchWeeklyHours,
+  fetchWeeklyHoursSuggestions,
+  removeWeeklyHours,
+  setWeeklyHours,
   unassignContentFromSpace,
 } from '../lib/api-client';
 import { EmptyState } from '../components/EmptyState';
@@ -539,6 +545,193 @@ function SpaceDetail({
             </div>
           ) : null}
         </>
+      ) : null}
+
+      <WeeklyHoursSection token={token} space={space} isPublished={isPublished} />
+    </div>
+  );
+}
+
+function WeeklyHoursSection({
+  token,
+  space,
+  isPublished,
+}: {
+  token: string;
+  space: CurricularSpaceSummary;
+  isPublished: boolean;
+}) {
+  const [entries, setEntries] = useState<WeeklyHoursEntry[]>([]);
+  const [suggestions, setSuggestions] = useState<WeeklyHoursSuggestion[]>([]);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [error, setError] = useState('');
+  const terms = Array.from(
+    { length: space.endTerm - space.startTerm + 1 },
+    (_, index) => space.startTerm + index,
+  );
+  const [termNumber, setTermNumber] = useState(terms[0] ?? space.startTerm);
+  const [areaCode, setAreaCode] = useState(space.areas[0]?.code ?? '');
+  const [hours, setHours] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    setStatus('loading');
+    Promise.all([fetchWeeklyHours(token, space.id), fetchWeeklyHoursSuggestions(token, space.id)])
+      .then(([entriesResult, suggestionsResult]) => {
+        setEntries(entriesResult);
+        setSuggestions(suggestionsResult);
+        setStatus('ready');
+      })
+      .catch((err) => {
+        setError(err instanceof ApiError ? err.message : 'No se pudo cargar la carga horaria.');
+        setStatus('error');
+      });
+  }, [token, space.id]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setError('');
+    try {
+      const updated = await setWeeklyHours(token, space.id, {
+        areaCode,
+        termNumber,
+        hours: Number(hours),
+      });
+      setEntries(updated);
+      setHours('');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo cargar la carga horaria.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRemove = async (entry: WeeklyHoursEntry) => {
+    const key = `${entry.areaCode}-${entry.termNumber}`;
+    setBusyKey(key);
+    setError('');
+    try {
+      const updated = await removeWeeklyHours(token, space.id, entry.areaCode, entry.termNumber);
+      setEntries(updated);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo eliminar la carga horaria.');
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  return (
+    <div>
+      <h4>Carga horaria semanal</h4>
+
+      {error ? (
+        <p className="pci-state pci-state--error" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      {status === 'loading' ? <LoadingState label="Cargando carga horaria…" /> : null}
+      {status === 'error' ? <ErrorState message={error} /> : null}
+
+      {status === 'ready' && suggestions.length > 0 ? (
+        <p className="pci-table__muted">
+          Horas oficiales sugeridas (plan de Formación General, Nivel {space.levelNumber}):{' '}
+          {suggestions.map((s) => `${s.unidadCurricular}: ${s.hours} hs/semana`).join(' · ')}
+        </p>
+      ) : null}
+
+      {status === 'ready' && entries.length === 0 ? (
+        <EmptyState message="Todavía no se cargó carga horaria para este espacio." />
+      ) : null}
+
+      {status === 'ready' && entries.length > 0 ? (
+        <div className="pci-table-wrap">
+          <table className="pci-table">
+            <thead>
+              <tr>
+                <th>Cuatrimestre</th>
+                <th>Área</th>
+                <th>Horas/semana</th>
+                {!isPublished ? <th></th> : null}
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((entry) => (
+                <tr key={entry.id}>
+                  <td>C{entry.termNumber}</td>
+                  <td>{entry.areaName}</td>
+                  <td>{entry.hours}</td>
+                  {!isPublished ? (
+                    <td>
+                      <button
+                        type="button"
+                        className="pci-button pci-button--secondary"
+                        disabled={busyKey === `${entry.areaCode}-${entry.termNumber}`}
+                        onClick={() => handleRemove(entry)}
+                      >
+                        Quitar
+                      </button>
+                    </td>
+                  ) : null}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+
+      {!isPublished ? (
+        <form className="pci-filters" onSubmit={handleSubmit}>
+          <div className="pci-field">
+            <label htmlFor="whTerm">Cuatrimestre</label>
+            <select
+              id="whTerm"
+              value={termNumber}
+              onChange={(event) => setTermNumber(Number(event.target.value))}
+            >
+              {terms.map((term) => (
+                <option key={term} value={term}>
+                  C{term}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="pci-field">
+            <label htmlFor="whArea">Área</label>
+            <select
+              id="whArea"
+              value={areaCode}
+              onChange={(event) => setAreaCode(event.target.value)}
+            >
+              {space.areas.map((area) => (
+                <option key={area.code} value={area.code}>
+                  {area.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="pci-field">
+            <label htmlFor="whHours">Horas/semana</label>
+            <input
+              id="whHours"
+              type="number"
+              min={0}
+              step="0.5"
+              required
+              value={hours}
+              onChange={(event) => setHours(event.target.value)}
+            />
+          </div>
+          <button type="submit" className="pci-button" disabled={submitting || !areaCode}>
+            {submitting ? 'Guardando…' : 'Cargar horas'}
+          </button>
+        </form>
       ) : null}
     </div>
   );
