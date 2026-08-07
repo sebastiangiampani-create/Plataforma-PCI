@@ -1,0 +1,358 @@
+:root {
+  --pci-bg: #f4f6f8;
+  --pci-surface: #ffffff;
+  --pci-border: #d9dfe4;
+  --pci-text: #1f2933;
+  --pci-text-muted: #52606d;
+  --pci-primary: #1d4ed8;
+  --pci-primary-contrast: #ffffff;
+  --pci-error: #b91c1c;
+  --pci-radius: 8px;
+  --pci-header-height: 64px;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--pci-bg);
+  color: var(--pci-text);
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+.pci-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.pci-header {
+  height: var(--pci-header-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  background: var(--pci-surface);
+  border-bottom: 1px solid var(--pci-border);
+}
+
+.pci-header__brand {
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+.pci-header__meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: var(--pci-text-muted);
+}
+
+.pci-main {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.pci-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--pci-surface);
+  border: 1px solid var(--pci-border);
+  border-radius: var(--pci-radius);
+  padding: 1.5rem;
+}
+
+.pci-card--wide {
+  max-width: 720px;
+}
+
+.pci-shell-content {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.pci-card h1,
+.pci-card h2 {
+  margin-top: 0;
+}
+
+.pci-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.pci-field label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.pci-field input {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--pci-border);
+  border-radius: var(--pci-radius);
+  font-size: 1rem;
+}
+
+.pci-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1rem;
+  border: none;
+  border-radius: var(--pci-radius);
+  background: var(--pci-primary);
+  color: var(--pci-primary-contrast);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+}
+
+.pci-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pci-button--secondary {
+  background: transparent;
+  color: var(--pci-primary);
+  border: 1px solid var(--pci-primary);
+}
+
+.pci-school-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pci-school-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--pci-border);
+  border-radius: var(--pci-radius);
+  background: var(--pci-bg);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-size: 1rem;
+}
+
+.pci-school-item:hover {
+  border-color: var(--pci-primary);
+}
+
+.pci-school-item__code {
+  font-size: 0.75rem;
+  color: var(--pci-text-muted);
+}
+
+.pci-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--pci-text-muted);
+}
+
+.pci-state--error {
+  color: var(--pci-error);
+}
+
+.pci-placeholder {
+  border: 1px dashed var(--pci-border);
+  border-radius: var(--pci-radius);
+  padding: 1.5rem;
+  color: var(--pci-text-muted);
+  text-align: center;
+}
+
+.pci-field select {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--pci-border);
+  border-radius: var(--pci-radius);
+  font-size: 1rem;
+  background: var(--pci-surface);
+}
+
+.pci-field select:disabled {
+  opacity: 0.6;
+}
+
+.pci-divider {
+  border: none;
+  border-top: 1px solid var(--pci-border);
+  margin: 1.5rem 0;
+}
+
+.pci-checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+
+.pci-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: normal;
+}
+
+.pci-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.pci-filters__search-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pci-filters__search-row input {
+  flex: 1;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--pci-border);
+  border-radius: var(--pci-radius);
+  font-size: 1rem;
+}
+
+.pci-filters__search .pci-button {
+  width: auto;
+}
+
+.pci-field textarea {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--pci-border);
+  border-radius: var(--pci-radius);
+  font-size: 0.875rem;
+  font-family: ui-monospace, monospace;
+  resize: vertical;
+}
+
+.pci-imports-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.pci-imports-header h2 {
+  margin: 0;
+}
+
+.pci-imports-header .pci-button,
+.pci-imports-actions .pci-button {
+  width: auto;
+}
+
+.pci-imports-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.pci-table-wrap {
+  overflow-x: auto;
+}
+
+.pci-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.pci-table th,
+.pci-table td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--pci-border);
+  white-space: nowrap;
+}
+
+.pci-table td:last-child {
+  white-space: normal;
+}
+
+.pci-table__row {
+  cursor: pointer;
+}
+
+.pci-table__row:hover {
+  background: var(--pci-bg);
+}
+
+.pci-table__muted {
+  color: var(--pci-text-muted);
+  font-size: 0.75rem;
+}
+
+.pci-badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.pci-badge--valid,
+.pci-badge--imported {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.pci-badge--invalid {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.pci-badge--duplicate {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+@media (max-width: 640px) {
+  .pci-header {
+    padding: 0 1rem;
+    flex-direction: column;
+    height: auto;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .pci-main {
+    padding: 1.25rem 0.75rem;
+  }
+
+  .pci-card {
+    padding: 1.25rem;
+  }
+}
