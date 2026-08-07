@@ -10,6 +10,7 @@ import { CurricularContentsModule } from './modules/curricular-contents/curricul
 import { PciProjectsModule } from './modules/pci-projects/pci-projects.module.js';
 import { CurricularSpacesModule } from './modules/curricular-spaces/curricular-spaces.module.js';
 import { WeeklyHoursModule } from './modules/weekly-hours/weekly-hours.module.js';
+import { ValidationModule } from './modules/validation/validation.module.js';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { WeeklyHoursModule } from './modules/weekly-hours/weekly-hours.module.js
     PciProjectsModule,
     CurricularSpacesModule,
     WeeklyHoursModule,
+    ValidationModule,
   ],
 })
 export class AppModule {}

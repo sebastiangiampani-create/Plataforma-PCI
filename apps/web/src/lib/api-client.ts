@@ -19,6 +19,7 @@ import {
   sessionResponseSchema,
   setWeeklyHoursRequestSchema,
   updatePciVersionRequestSchema,
+  validationRunResponseSchema,
   weeklyHoursEntrySchema,
   weeklyHoursSuggestionSchema,
   type AssignContentRequest,
@@ -37,6 +38,7 @@ import {
   type SchoolSummary,
   type SessionResponse,
   type SetWeeklyHoursRequest,
+  type ValidationRunResponse,
   type WeeklyHoursEntry,
   type WeeklyHoursSuggestion,
 } from '@pci/domain';
@@ -300,6 +302,22 @@ export function unassignContentFromSpace(
     z.array(contentAssignmentSummarySchema),
     { method: 'DELETE', headers: authHeaders(token) },
   );
+}
+
+export function runValidation(token: string, versionId: string): Promise<ValidationRunResponse> {
+  return request(`/pci-versions/${versionId}/validate`, validationRunResponseSchema, {
+    method: 'POST',
+    headers: authHeaders(token),
+  });
+}
+
+export function fetchValidationResults(
+  token: string,
+  versionId: string,
+): Promise<ValidationRunResponse> {
+  return request(`/pci-versions/${versionId}/validation-results`, validationRunResponseSchema, {
+    headers: authHeaders(token),
+  });
 }
 
 export function fetchWeeklyHours(token: string, spaceId: string): Promise<WeeklyHoursEntry[]> {

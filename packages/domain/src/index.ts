@@ -16,3 +16,4 @@ export * from './contracts/curricular-contents.js';
 export * from './contracts/pci-projects.js';
 export * from './contracts/curricular-spaces.js';
 export * from './contracts/weekly-hours.js';
+export * from './contracts/validation.js';

@@ -604,3 +604,83 @@ existía ningún espacio real al que asociarlo) con la tabla real
   de un feature de `articulations` que todavía no tiene ningún endpoint.
 - Suite completa verde: `format:check`, `lint`, `typecheck`, `test` (131
   tests, todos los workspaces) y `build`.
+
+## 17. Motor de reglas real (`validation_rules` + `validation_results`)
+
+Primera pieza que corre el catálogo de reglas de `docs/06-rule-engine.md`
+contra datos reales de una versión PCI, en vez de dejarlo solo como
+documentación. Usa dos tablas que existían desde Application Foundation
+sin ningún código que las tocara: `validation_rules` (ya sembrada con las
+16 reglas del catálogo, severidad y estado `active` incluidos) y
+`validation_results` (pensada desde el modelo de datos original para
+persistir hallazgos con `resolved_at`, es decir, para sostener un
+historial y no solo el estado actual).
+
+- **Alcance deliberadamente acotado**: de las 16 reglas del catálogo, se
+  implementan las 4 evaluables hoy sin inventar ningún dato ni umbral:
+  - **PCI-STR-001/002**: recorre los `curricular_spaces` reales de la
+    versión y reutiliza `areConsecutiveTerms`/`getTermsForLevel`
+    (`packages/domain/src/rules/term-level.ts`; `areConsecutiveTerms`
+    escrita desde el hito original pero nunca consumida hasta ahora) para
+    confirmar que cada espacio ocupa dos cuatrimestres consecutivos y que
+    coinciden con los de su nivel. Ya se aplican al crear un espacio, así
+    que en el flujo normal nunca deberían disparar — se corren igual como
+    auditoría defensiva (detectan drift si algo escribe la tabla por otro
+    camino, p. ej. una migración futura o un bug).
+  - **PCI-ORI-002**: mismo criterio, releído contra los espacios reales en
+    vez de solo validado al crearlos.
+  - **PCI-COV-001**: la única regla que sí puede fallar hoy en la
+    práctica — cualquier contenido `ACTIVE` de la bolsa real que no esté
+    asignado a ningún espacio de la versión aparece como hallazgo
+    (`WARNING`, la severidad real seedeada, no inventada). Verificado
+    contra los 1155 contenidos reales de Formación General: una versión
+    sin espacios devuelve exactamente 1155 hallazgos; al asignar uno,
+    baja a 1154.
+  - El resto del catálogo (PCI-HRS-003/004, PCI-ORI-001/003, PCI-GEN-001,
+    PCI-COV-002, PCI-MOD-001) queda explícitamente sin implementar,
+    documentado en el docstring de `packages/domain/src/contracts/validation.ts`:
+    dependen de datos que todavía no existen (`articulations`, Formación
+    Orientada) o de umbrales que el `configuration_json` seedeado todavía
+    no define (PCI-COV-002 no tiene un umbral de sobrerrepresentación
+    real que aplicar). PCI-VER-001/002 e PCI-IMP-001 ya se exigen de
+    forma procedural en el momento de la mutación (services existentes),
+    no como chequeo estático de una versión.
+  - Solo se evalúan reglas con `active = TRUE` en `validation_rules`,
+    respetando que el catálogo es administrable (spec del rule engine).
+- **`POST /pci-versions/:id/validate`**: corre las cuatro reglas contra
+  los datos reales de la versión, dentro de una transacción marca
+  `resolved_at = now()` en los hallazgos abiertos previos y hace un
+  único `INSERT` multi-fila con los hallazgos nuevos (evita el patrón
+  N+1 de insertar fila por fila — con 1155 hallazgos posibles, importa).
+  No borra el historial: cada corrida preserva las filas anteriores como
+  resueltas, coherente con el espíritu de PCI-IMP-001 (no perder rastro).
+- **`GET /pci-versions/:id/validation-results`**: lee el último lote de
+  hallazgos abiertos (`resolved_at IS NULL`) sin volver a correr nada,
+  agrupado en un resumen por regla (`summary`, con el conteo real total)
+  y un detalle (`results`, con `LIMIT 200 + 1` para saber si hay que
+  truncar) — el resumen nunca miente aunque el detalle esté truncado.
+- **`ValidationPanel`** (`apps/web/src/pages/PciProjectPage.tsx`), entre
+  el fundamento pedagógico y los espacios curriculares del detalle del
+  proyecto: botón "Validar versión", tabla resumen por regla (severidad
+  + conteo) y tabla de detalle. Bug de UI real encontrado y corregido en
+  esta misma sesión: la tabla resumen tenía la columna "Regla" (con el
+  nombre completo, largo) primero, empujando "Severidad" y "Hallazgos"
+  fuera de la pantalla incluso a 1280px porque las celdas usan
+  `white-space: nowrap` salvo la última columna — se reordenó para que
+  "Código", "Severidad" y "Hallazgos" vayan primero (siempre visibles) y
+  el nombre largo de la regla quede último (así se lo permite envolver).
+  Detectado mirando la captura de Playwright, no solo corriendo tests.
+- Tests: 6 de integración contra PostgreSQL real (currentResults vacío
+  antes de correr; PCI-STR-001 sobre un espacio insertado directo por
+  SQL para simular drift; PCI-STR-002 con rango consecutivo pero nivel
+  equivocado; PCI-COV-001 completo, incluyendo que asignar contenido real
+  baja el conteo real en la base; re-ejecutar resuelve lo anterior y
+  guarda un lote nuevo con id distinto; 404/Forbidden), 2 e2e HTTP, 2 de
+  contrato del cliente API. Verificado en navegador real con Playwright:
+  proyecto nuevo sin espacios → "Validar versión" → 1155 hallazgos reales
+  de PCI-COV-001 → crear espacio, buscar "Internet" en la bolsa real,
+  asignarlo → volver a validar → 1154. Nota de truncamiento visible y
+  correcta ("se muestran los primeros 200… el resumen de arriba refleja
+  el total real").
+- Suite completa verde: `format:check`, `lint`, `typecheck`, `test` (141
+  tests, todos los workspaces) y `build`.

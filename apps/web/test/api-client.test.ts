@@ -12,8 +12,10 @@ import {
   fetchCurricularSpaces,
   fetchCurricularTaxonomy,
   fetchPciProjects,
+  fetchValidationResults,
   listCurricularImports,
   publishPciVersion,
+  runValidation,
 } from '../src/lib/api-client';
 
 function jsonResponse(body: unknown, init: { status?: number } = {}) {
@@ -308,6 +310,56 @@ describe('publishPciVersion', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining(`/pci-versions/${version.id}/publish`),
       expect.objectContaining({ method: 'POST' }),
+    );
+  });
+});
+
+describe('runValidation', () => {
+  it('corre la validación por POST y parsea resumen + resultados', async () => {
+    const response = {
+      summary: [{ ruleCode: 'PCI-COV-001', ruleName: 'Cobertura', severity: 'WARNING', count: 2 }],
+      results: [
+        {
+          id: '55555555-5555-4555-8555-555555555555',
+          ruleCode: 'PCI-COV-001',
+          ruleName: 'Cobertura',
+          severity: 'WARNING',
+          entityType: 'curricular_content',
+          entityId: '66666666-6666-4666-8666-666666666666',
+          message: 'No está asignado a ningún espacio.',
+          cause: null,
+          impact: null,
+          suggestedAction: null,
+        },
+      ],
+      truncated: false,
+    };
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(response));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await runValidation('token', '33333333-3333-4333-8333-333333333333');
+    expect(result.summary).toHaveLength(1);
+    expect(result.results[0]?.ruleCode).toBe('PCI-COV-001');
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/pci-versions/33333333-3333-4333-8333-333333333333/validate'),
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+});
+
+describe('fetchValidationResults', () => {
+  it('lee el último resultado por GET sin re-ejecutar', async () => {
+    const response = { summary: [], results: [], truncated: false };
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(response));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await fetchValidationResults('token', '33333333-3333-4333-8333-333333333333');
+    expect(result).toEqual(response);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining(
+        '/pci-versions/33333333-3333-4333-8333-333333333333/validation-results',
+      ),
+      expect.anything(),
     );
   });
 });

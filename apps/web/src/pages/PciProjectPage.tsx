@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import type { PciProjectSummary } from '@pci/domain';
+import type { PciProjectSummary, ValidationRunResponse } from '@pci/domain';
 import {
   ApiError,
   createPciProject,
   createPciVersion,
   fetchPciProjects,
+  fetchValidationResults,
   publishPciVersion,
+  runValidation,
   updatePciVersion,
 } from '../lib/api-client';
 import { EmptyState } from '../components/EmptyState';
@@ -20,6 +22,12 @@ const STATUS_LABEL: Record<string, string> = {
   IN_PROGRESS: 'En progreso',
   VALIDATED: 'Validado',
   PUBLISHED: 'Publicado',
+};
+
+const SEVERITY_LABEL: Record<string, string> = {
+  ERROR: 'Error',
+  WARNING: 'Advertencia',
+  RECOMMENDATION: 'Recomendación',
 };
 
 export function PciProjectPage({ token }: { token: string }) {
@@ -311,7 +319,126 @@ function ProjectDetail({
       ) : null}
 
       <hr className="pci-divider" />
+      <ValidationPanel token={token} versionId={version.id} />
+
+      <hr className="pci-divider" />
       <CurricularSpacesPanel token={token} versionId={version.id} isPublished={isPublished} />
+    </div>
+  );
+}
+
+function ValidationPanel({ token, versionId }: { token: string; versionId: string }) {
+  const [data, setData] = useState<ValidationRunResponse | null>(null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [error, setError] = useState('');
+  const [running, setRunning] = useState(false);
+
+  const load = useCallback(() => {
+    setStatus('loading');
+    fetchValidationResults(token, versionId)
+      .then((result) => {
+        setData(result);
+        setStatus('ready');
+      })
+      .catch((err) => {
+        setError(err instanceof ApiError ? err.message : 'No se pudo cargar la validación.');
+        setStatus('error');
+      });
+  }, [token, versionId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleRun = async () => {
+    setRunning(true);
+    setError('');
+    try {
+      const result = await runValidation(token, versionId);
+      setData(result);
+      setStatus('ready');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo validar la versión.');
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="pci-imports-header">
+        <h4>Validación (motor de reglas PCI)</h4>
+        <button type="button" className="pci-button" disabled={running} onClick={handleRun}>
+          {running ? 'Validando…' : 'Validar versión'}
+        </button>
+      </div>
+
+      {error ? (
+        <p className="pci-state pci-state--error" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      {status === 'loading' ? <LoadingState label="Cargando validación…" /> : null}
+      {status === 'error' ? <ErrorState message={error} /> : null}
+
+      {status === 'ready' && data && data.summary.length === 0 ? (
+        <EmptyState message="Todavía no se corrió la validación, o la última corrida no encontró hallazgos." />
+      ) : null}
+
+      {status === 'ready' && data && data.summary.length > 0 ? (
+        <>
+          <div className="pci-table-wrap">
+            <table className="pci-table">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Severidad</th>
+                  <th>Hallazgos</th>
+                  <th>Regla</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.summary.map((entry) => (
+                  <tr key={entry.ruleCode}>
+                    <td>{entry.ruleCode}</td>
+                    <td>{SEVERITY_LABEL[entry.severity] ?? entry.severity}</td>
+                    <td>{entry.count}</td>
+                    <td>{entry.ruleName}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="pci-table-wrap">
+            <table className="pci-table">
+              <thead>
+                <tr>
+                  <th>Regla</th>
+                  <th>Entidad</th>
+                  <th>Mensaje</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.results.map((result) => (
+                  <tr key={result.id}>
+                    <td>{result.ruleCode}</td>
+                    <td>{result.entityType}</td>
+                    <td>{result.message}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {data.truncated ? (
+            <p className="pci-table__muted">
+              Se muestran los primeros {data.results.length} hallazgos de detalle; el resumen de
+              arriba refleja el total real.
+            </p>
+          ) : null}
+        </>
+      ) : null}
     </div>
   );
 }
