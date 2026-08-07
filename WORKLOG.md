@@ -276,3 +276,64 @@ y los contratos de dominio ya preparados en este hito:
   electivos — auditando primero `Matriz-PCI` en modo lectura para no
   reinventar reglas que ya existen ahí (principio "no inventar reglas
   curriculares").
+
+## 10. Trabajo posterior al cierre del hito
+
+Sobre la misma rama/PR, después de que el hito quedó verde en CI:
+
+- **Fix de reproducibilidad**: `db:migrate`/`db:seed` no tenían hook
+  `predb:migrate`/`predb:seed` (a diferencia de `dev`/`build`/`typecheck`/
+  `test`, que sí lo tienen), así que un checkout fresco fallaba con
+  `ERR_MODULE_NOT_FOUND` al resolver `@pci/config/dist/index.js` desde
+  `packages/database` si no se corría `build:libs` a mano primero
+  (encontrado al migrar/sembrar en un Codespace recién clonado). Corregido
+  agregando ambos hooks.
+- **Auditoría de `Matriz-PCI` (solo lectura)** documentada en
+  `docs/09-auditoria-matriz-pci.md`: arquitectura real (100% cliente,
+  `localStorage`), configuración real de agrupamientos obligatorios
+  (`CFG`), confirmación de que el reparto de grupos en cuatrimestres es
+  una decisión manual de la escuela (no un reparto automático), ejemplo
+  real de Escuela 4, y los 1155 contenidos reales de Formación General
+  decodificados de sus archivos comprimidos (`docs/reference-data/`).
+- **Plan de estudios oficial de Formación General**
+  (`docs/08-plan-de-estudios-formacion-general.md`): tabla de horas
+  cátedra semanales por nivel, provista directamente por la dirección del
+  proyecto — reemplaza cualquier número supuesto en `docs/01-prd.md` o
+  `docs/06-rule-engine.md`.
+- **Taxonomía y bolsa de contenidos real de Formación General cargadas en
+  la base**: `database/seeds/0005_curricular_taxonomy_formacion_general.sql`
+  (8 áreas, 18 materias, 221 ejes) y
+  `0006_curricular_contents_formacion_general.sql` (1155 contenidos),
+  generados programáticamente a partir de
+  `docs/reference-data/matriz-pci-formacion-general-contenidos.json` para
+  evitar errores de transcripción manual en 1155 filas. Área → materia →
+  eje es la jerarquía real encontrada en los datos (no inventada); el único
+  choque de nombres de eje repetido entre dos materias (Artes Visuales /
+  Teatro) se resolvió con códigos que incluyen la materia, no solo el eje.
+  Verificado con datos reales: migraciones + seeds corridos dos veces
+  seguidas contra PostgreSQL real sin duplicar filas, y conteo por área
+  coincide exactamente con la tabla de `docs/09-auditoria-matriz-pci.md`.
+- **`FORMACION_GENERAL_PLAN`** (`packages/domain/src/reference-data/
+  formacion-general-plan.ts`): el plan de horas de `docs/08` como
+  referencia tipada y validada con Zod, enlazada por código de área/materia
+  con la taxonomía recién sembrada. **No se escribió en `weekly_hours`**:
+  esa tabla depende de un `curricular_space` real de una versión de PCI de
+  una escuela concreta, y ninguna escuela tiene todavía un proyecto PCI
+  iniciado — crear uno de forma artificial solo para tener dónde guardar
+  las horas hubiera violado el principio de no usar datos ficticios. Cruzar
+  el plan de horas con la taxonomía real encontró tres huecos genuinos que
+  se dejaron documentados en vez de resueltos por inferencia: la fila
+  "Artes" del plan es un agregado de área (la bolsa real la divide en 3
+  materias sin indicar el reparto), "Tutoría" tiene horas pero no aparece
+  en la bolsa de contenidos, y "Educación Tecnológica" aparece en la bolsa
+  pero no tiene fila de horas en el plan.
+- **Tests nuevos, todos contra PostgreSQL real** (no simulados): 4 en
+  `packages/domain` (integridad del plan: totales por nivel suman
+  correctamente, 16 filas, notas presentes donde falta enlace, códigos de
+  materia sin duplicados) y 4 en `packages/database` (cuenta exacta de
+  1155 contenidos, distribución por área coincide con la auditoría, cada
+  código de área/materia del plan existe realmente en la taxonomía
+  sembrada, y los seeds corridos dos veces no duplican filas). Suite
+  completa verificada de punta a punta en este entorno: `format:check`,
+  `lint`, `typecheck`, `test` (54 tests, todos los workspaces) y `build`,
+  todo verde.
