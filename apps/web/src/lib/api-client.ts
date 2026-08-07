@@ -2,20 +2,27 @@ import { z } from 'zod';
 import {
   apiErrorResponseSchema,
   createCurricularImportRequestSchema,
+  createPciProjectRequestSchema,
   curricularContentListResponseSchema,
   curricularImportListItemSchema,
   curricularImportSummarySchema,
   curricularTaxonomyAreaSchema,
   devLoginRequestSchema,
+  pciProjectSummarySchema,
+  pciVersionSummarySchema,
   schoolSummarySchema,
   selectSchoolRequestSchema,
   sessionResponseSchema,
+  updatePciVersionRequestSchema,
   type CreateCurricularImportRequest,
+  type CreatePciProjectRequest,
   type CurricularContentListResponse,
   type CurricularImportListItem,
   type CurricularImportSummary,
   type CurricularTaxonomyArea,
   type DevLoginRequest,
+  type PciProjectSummary,
+  type PciVersionSummary,
   type SchoolSummary,
   type SessionResponse,
 } from '@pci/domain';
@@ -174,4 +181,49 @@ export function fetchCurricularTaxonomy(
     z.array(curricularTaxonomyAreaSchema),
     { headers: authHeaders(token) },
   );
+}
+
+export function fetchPciProjects(token: string): Promise<PciProjectSummary[]> {
+  return request('/pci-projects', z.array(pciProjectSummarySchema), {
+    headers: authHeaders(token),
+  });
+}
+
+export function createPciProject(
+  token: string,
+  payload: CreatePciProjectRequest,
+): Promise<PciProjectSummary> {
+  const validated = createPciProjectRequestSchema.parse(payload);
+  return request('/pci-projects', pciProjectSummarySchema, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(validated),
+  });
+}
+
+export function createPciVersion(token: string, projectId: string): Promise<PciProjectSummary> {
+  return request(`/pci-projects/${projectId}/versions`, pciProjectSummarySchema, {
+    method: 'POST',
+    headers: authHeaders(token),
+  });
+}
+
+export function updatePciVersion(
+  token: string,
+  versionId: string,
+  pedagogicalRationale: string,
+): Promise<PciVersionSummary> {
+  const validated = updatePciVersionRequestSchema.parse({ pedagogicalRationale });
+  return request(`/pci-versions/${versionId}`, pciVersionSummarySchema, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+    body: JSON.stringify(validated),
+  });
+}
+
+export function publishPciVersion(token: string, versionId: string): Promise<PciVersionSummary> {
+  return request(`/pci-versions/${versionId}/publish`, pciVersionSummarySchema, {
+    method: 'POST',
+    headers: authHeaders(token),
+  });
 }

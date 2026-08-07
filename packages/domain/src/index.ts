@@ -13,3 +13,4 @@ export * from './contracts/schools.js';
 export * from './contracts/errors.js';
 export * from './contracts/curricular-imports.js';
 export * from './contracts/curricular-contents.js';
+export * from './contracts/pci-projects.js';

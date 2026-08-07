@@ -7,6 +7,7 @@ import { SessionModule } from './modules/session/session.module.js';
 import { SchoolsModule } from './modules/schools/schools.module.js';
 import { CurricularImportsModule } from './modules/curricular-imports/curricular-imports.module.js';
 import { CurricularContentsModule } from './modules/curricular-contents/curricular-contents.module.js';
+import { PciProjectsModule } from './modules/pci-projects/pci-projects.module.js';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { CurricularContentsModule } from './modules/curricular-contents/curricul
     SchoolsModule,
     CurricularImportsModule,
     CurricularContentsModule,
+    PciProjectsModule,
   ],
 })
 export class AppModule {}

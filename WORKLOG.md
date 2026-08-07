@@ -435,3 +435,50 @@ para cuando exista un flujo real de creación de proyectos/versiones PCI
   Tecnologías). Capturas revisadas a mano.
 - Suite completa verde: `format:check`, `lint`, `typecheck`, `test`
   (84 tests, todos los workspaces) y `build`.
+
+## 14. Alta de proyecto/versión PCI por escuela
+
+Hasta este punto ninguna escuela tenía forma de iniciar su PCI — era el
+bloqueador real para todo lo que sigue en Fase 4 (asignar contenido a
+espacios curriculares necesita un `curricular_space`, que necesita una
+`pci_version`, que necesita un `pci_project`). Se implementó el ciclo de
+vida completo aplicando las reglas ya documentadas, sin inventar ninguna
+nueva:
+
+- **`POST /pci-projects`**: crea el proyecto (`status DRAFT`) y su primera
+  versión (`version_number 1`, `status DRAFT`) en una sola transacción,
+  usando la escuela activa de la sesión (`session.activeSchoolId`) — no un
+  `schoolId` arbitrario en el body, para no poder crear un proyecto para
+  una escuela a la que no se tiene acceso.
+- **`POST /pci-projects/:id/versions`**: crea la versión siguiente
+  (`version_number` incremental). Aplica **PCI-VER-002** ("toda
+  modificación posterior a una publicación crea una nueva versión"): solo
+  se puede crear una versión nueva si la actual ya está `PUBLISHED`, si no,
+  `409 PCI_VERSION_NOT_PUBLISHED`.
+- **`PATCH /pci-versions/:id`**: edita `pedagogicalRationale`. Aplica
+  **PCI-VER-001** ("una versión publicada es inmutable"): rechaza la
+  edición con `409 PCI_VERSION_PUBLISHED` si la versión ya fue publicada.
+- **`POST /pci-versions/:id/publish`**: publica (`published_at`,
+  `published_by`), refleja el estado en el proyecto, y no permite
+  publicar dos veces (`409 PCI_VERSION_ALREADY_PUBLISHED`).
+- Cada operación sobre `:id` verifica que el proyecto/versión pertenezca
+  a la escuela activa de la sesión (`403 PCI_PROJECT_ACCESS_DENIED` si
+  no) — mismo patrón de control de acceso que ya usa `SessionService`.
+- **No se agregó** una regla de "un solo proyecto PCI por escuela": el
+  modelo de datos (`docs/05-modelo-datos.md`) no la exige y el dominio
+  (`docs/03-modelo-dominio.md`) no la prohíbe explícitamente — inventar esa
+  restricción hubiera sido agregar una regla curricular no documentada.
+- **`PciProjectPage`** (`apps/web`): listado, alta, edición del fundamento
+  pedagógico (deshabilitado si la versión está publicada), publicar, y
+  crear la siguiente versión.
+- Tests: 8 de integración contra PostgreSQL real cubriendo el ciclo
+  completo (alta con v1 en DRAFT, aislamiento entre escuelas con
+  `ForbiddenException`, 404, edición del fundamento, ambas reglas
+  PCI-VER-001/002 explícitamente), 3 e2e HTTP (incluye el caso sin escuela
+  activa → 403), 5 web. Verificado también en navegador real con
+  Playwright: crear proyecto → editar fundamento → guardar → publicar
+  (textarea se deshabilita, aparece el aviso de inmutabilidad) → crear
+  versión 2 (vuelve a DRAFT, fundamento vacío y editable). Datos de
+  prueba borrados de la base al terminar.
+- Suite completa verde: `format:check`, `lint`, `typecheck`, `test`
+  (100 tests, todos los workspaces) y `build`.

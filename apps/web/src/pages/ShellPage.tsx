@@ -1,6 +1,7 @@
 import type { SchoolSummary } from '@pci/domain';
 import { CurricularContentsPage } from './CurricularContentsPage';
 import { CurricularImportsPage } from './CurricularImportsPage';
+import { PciProjectPage } from './PciProjectPage';
 
 export function ShellPage({ token, activeSchool }: { token: string; activeSchool: SchoolSummary }) {
   return (
@@ -14,6 +15,7 @@ export function ShellPage({ token, activeSchool }: { token: string; activeSchool
           El mapa curricular y la trazabilidad se incorporarán en próximos hitos.
         </div>
       </div>
+      <PciProjectPage token={token} />
       <CurricularContentsPage token={token} />
       <CurricularImportsPage token={token} />
     </div>

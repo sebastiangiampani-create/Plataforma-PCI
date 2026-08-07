@@ -3,11 +3,14 @@ import {
   ApiError,
   confirmCurricularImport,
   createCurricularImport,
+  createPciProject,
   devLogin,
   fetchAccessibleSchools,
   fetchCurricularContents,
   fetchCurricularTaxonomy,
+  fetchPciProjects,
   listCurricularImports,
+  publishPciVersion,
 } from '../src/lib/api-client';
 
 function jsonResponse(body: unknown, init: { status?: number } = {}) {
@@ -237,5 +240,71 @@ describe('fetchCurricularTaxonomy', () => {
 
     const result = await fetchCurricularTaxonomy('token');
     expect(result[0]?.subjects[0]?.axes[0]?.code).toBe('MATEMATICA_MATEMATICA_EJE_001');
+  });
+});
+
+describe('createPciProject', () => {
+  it('crea el proyecto con su primera versión en DRAFT', async () => {
+    const project = {
+      id: '11111111-1111-4111-8111-111111111111',
+      schoolId: '22222222-2222-4222-8222-222222222222',
+      name: 'PCI Escuela 1',
+      status: 'DRAFT',
+      currentVersion: {
+        id: '33333333-3333-4333-8333-333333333333',
+        pciProjectId: '11111111-1111-4111-8111-111111111111',
+        versionNumber: 1,
+        status: 'DRAFT',
+        pedagogicalRationale: null,
+        createdBy: '44444444-4444-4444-8444-444444444444',
+        publishedBy: null,
+        createdAt: new Date().toISOString(),
+        publishedAt: null,
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(project));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await createPciProject('token', { name: 'PCI Escuela 1' });
+    expect(result.currentVersion?.versionNumber).toBe(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/pci-projects'),
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+});
+
+describe('fetchPciProjects', () => {
+  it('parsea el listado de proyectos', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse([])));
+    const result = await fetchPciProjects('token');
+    expect(result).toEqual([]);
+  });
+});
+
+describe('publishPciVersion', () => {
+  it('llama al endpoint de publicación por id de versión', async () => {
+    const version = {
+      id: '33333333-3333-4333-8333-333333333333',
+      pciProjectId: '11111111-1111-4111-8111-111111111111',
+      versionNumber: 1,
+      status: 'PUBLISHED',
+      pedagogicalRationale: 'Fundamento',
+      createdBy: '44444444-4444-4444-8444-444444444444',
+      publishedBy: '44444444-4444-4444-8444-444444444444',
+      createdAt: new Date().toISOString(),
+      publishedAt: new Date().toISOString(),
+    };
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(version));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await publishPciVersion('token', version.id);
+    expect(result.status).toBe('PUBLISHED');
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining(`/pci-versions/${version.id}/publish`),
+      expect.objectContaining({ method: 'POST' }),
+    );
   });
 });
