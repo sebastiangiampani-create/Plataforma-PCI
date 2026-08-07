@@ -127,3 +127,28 @@ export interface Articulation {
   contributedHours: number;
   responsibilities: string | null;
 }
+
+export type CurricularImportStatus = 'PREVIEW' | 'APPLIED' | 'REVERTED';
+
+export interface CurricularImport {
+  id: string;
+  schoolId: string | null;
+  sourceName: string;
+  sourceVersion: string;
+  status: CurricularImportStatus;
+  importedBy: string;
+  createdAt: string;
+  revertedAt: string | null;
+}
+
+export type CurricularImportRowStatus = 'VALID' | 'INVALID' | 'DUPLICATE' | 'IMPORTED';
+
+export interface CurricularImportRow {
+  id: string;
+  curricularImportId: string;
+  rowNumber: number;
+  curricularContentId: string | null;
+  rawData: Record<string, string>;
+  validationErrors: string[] | null;
+  status: CurricularImportRowStatus;
+}

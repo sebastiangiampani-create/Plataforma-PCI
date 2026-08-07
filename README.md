@@ -43,6 +43,9 @@ La primera etapa dejará completamente operativa la Formación General y conserv
 - [Modelo de datos](docs/05-modelo-datos.md)
 - [Rule engine](docs/06-rule-engine.md)
 - [Application Foundation (arquitectura técnica del monorepo)](docs/07-application-foundation.md)
+- [Plan de estudios — Formación General](docs/08-plan-de-estudios-formacion-general.md)
+- [Auditoría de Matriz-PCI](docs/09-auditoria-matriz-pci.md)
+- [Importador curricular reversible](docs/10-importador-curricular.md)
 
 ## Flujo de desarrollo
 

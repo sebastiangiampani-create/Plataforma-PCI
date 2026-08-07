@@ -337,3 +337,44 @@ Sobre la misma rama/PR, después de que el hito quedó verde en CI:
   completa verificada de punta a punta en este entorno: `format:check`,
   `lint`, `typecheck`, `test` (54 tests, todos los workspaces) y `build`,
   todo verde.
+
+## 11. Importador curricular reversible (Fase 3)
+
+Detalle completo del diseño y sus decisiones de alcance en
+`docs/10-importador-curricular.md`. Resumen:
+
+- **Migración `0010_curricular_imports`**: crea `curricular_imports` y
+  `curricular_import_rows`, documentadas en `docs/05-modelo-datos.md` desde
+  el hito anterior pero nunca creadas. Rollback y reaplicación probados
+  contra PostgreSQL real.
+- **`apps/api/src/modules/curricular-imports`**: primer módulo de la API
+  con lógica de negocio real (no solo CRUD). Parsea CSV (`csv-parse`, no un
+  parser hecho a mano, para no fallar con comillas/comas embebidas en
+  `content_text`), valida cada fila contra la taxonomía real ya sembrada
+  (existencia y jerarquía: la materia debe pertenecer al área de la fila,
+  el eje a la materia), detecta duplicados (mismo `code` repetido en el
+  archivo o ya existente en `curricular_contents` con el mismo
+  `source_version`), y expone el flujo completo: crear/previsualizar,
+  listar, ver detalle, confirmar (importación parcial: solo se cargan las
+  filas `VALID`) y revertir (archiva el contenido creado, no lo borra —
+  PCI-IMP-001).
+- **Zod en `@pci/domain`** (`contracts/curricular-imports.ts`) para
+  request/response, siguiendo el patrón ya establecido en `contracts/schools.ts`.
+- **Validado en tres niveles**: 5 tests de integración de
+  `CurricularImportsService` contra PostgreSQL real (esquema aislado por
+  test, igual que `packages/database`) cubriendo preview con
+  válidos/inválidos/duplicados, confirmación parcial, reversión con
+  archivado real y bloqueo de doble confirmación/reversión; 2 tests e2e HTTP
+  del controller (incluyendo la regresión conocida del pipe de validación a
+  nivel de parámetro, no de método); 4 tests unitarios del parser CSV.
+  Además, flujo completo verificado con la API real corriendo y `curl`
+  (dev-login → crear → confirmar → revertir), confirmando en la base que el
+  contenido queda `ARCHIVED` (no borrado) tras revertir.
+- Encontrado y corregido durante el desarrollo: `loadTaxonomy` hacía 5
+  queries con `Promise.all` sobre una única conexión (`PoolClient`) dentro
+  de una transacción — `pg` lo acepta mediante una API deprecada (avisa por
+  consola) en vez de fallar, pero no es seguro; se cambió a queries
+  secuenciales.
+- Suite completa verificada de nuevo tras este cambio: `format:check`,
+  `lint`, `typecheck`, `test` (65 tests, todos los workspaces) y `build`,
+  todo verde.
